@@ -7,45 +7,41 @@ type GameItems = {
 };
 
 export class GameRenderer {
-    constructor(private scene: THREE.Scene, private game: Game) {}
+    private game: Game;
+    private items: GameItems;
 
-    static loop(initialGame: Game) {
+    private scene: THREE.Scene;
+    private renderer: THREE.WebGLRenderer;
+    private camera: THREE.PerspectiveCamera;
+
+    constructor(initialGame: Game) {
+        this.game = initialGame;
         const scene = new THREE.Scene();
+        this.scene = scene;
 
         const renderer = new THREE.WebGLRenderer();
+        this.renderer = renderer;
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        const gameR = new GameRenderer(scene, initialGame);
-        const camera = this.createCamera();
-        const items = gameR.render();
-        gameR.initRenderLoop(renderer, scene, camera, items);
-    }
-
-    render(): GameItems {
+        this.camera = this.addCamera();
         this.addLight();
         this.addCourt(this.game);
         const ball = this.addBall(this.game.ball);
 
-        return { ball: ball };
+        this.items = { ball: ball };
     }
 
-    initRenderLoop(
-        renderer: THREE.WebGLRenderer,
-        scene: THREE.Scene,
-        camera: THREE.Camera,
-        items: GameItems
-    ) {
-        let startTime: number | undefined;
+    initRenderLoop() {
+        const { renderer, scene, camera, items } = this;
+
         let lastTime: number | undefined;
         let game = this.game;
 
         function animate(currentTime: number) {
-            if (startTime === undefined) startTime = currentTime;
             if (lastTime === undefined) lastTime = currentTime;
-            const timestamp = (currentTime - startTime) / 1000;
-            const elapsed = currentTime - lastTime;
+            const elapsed = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
 
             renderer.render(scene, camera);
@@ -61,15 +57,11 @@ export class GameRenderer {
         requestAnimationFrame(animate);
     }
 
-    static createCamera() {
-        const camera = new THREE.PerspectiveCamera(
-            75,
-            window.innerWidth / window.innerHeight,
-            0.1,
-            1000
-        );
-        camera.position.set(0, 10, 5);
+    addCamera() {
+        const camera = new THREE.PerspectiveCamera(80, 1, 0.1);
+        camera.position.set(0, 8, 5);
         camera.lookAt(0, 0, 0);
+
         return camera;
     }
 
@@ -155,5 +147,6 @@ export class GameRenderer {
 
 export function createTennisCourt() {
     const initialGame = Game.create();
-    GameRenderer.loop(initialGame);
+    const gameRendered = new GameRenderer(initialGame);
+    gameRendered.initRenderLoop();
 }

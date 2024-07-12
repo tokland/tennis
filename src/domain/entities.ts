@@ -225,7 +225,6 @@ export class Game {
             },
             {
                 timestamp: 0,
-
                 ball: Ball.create({ radius: cm(10) }),
                 players: players,
                 matchState: MatchResult.initial(),
