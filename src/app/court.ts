@@ -7,7 +7,7 @@ type GameItems = {
 };
 
 export class GameRenderer {
-    constructor(private scene: THREE.Scene) {}
+    constructor(private scene: THREE.Scene, private game: Game) {}
 
     static loop(initialGame: Game) {
         const scene = new THREE.Scene();
@@ -17,22 +17,21 @@ export class GameRenderer {
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        const gameR = new GameRenderer(scene);
+        const gameR = new GameRenderer(scene, initialGame);
         const camera = this.createCamera();
-        const items = gameR.render(initialGame);
-        gameR.initRenderLoop(initialGame, renderer, scene, camera, items);
+        const items = gameR.render();
+        gameR.initRenderLoop(renderer, scene, camera, items);
     }
 
-    render(game: Game): GameItems {
+    render(): GameItems {
         this.addLight();
-        this.addCourt(game);
-        const ball = this.addBall(game.ball);
+        this.addCourt(this.game);
+        const ball = this.addBall(this.game.ball);
 
         return { ball: ball };
     }
 
     initRenderLoop(
-        initialGame: Game,
         renderer: THREE.WebGLRenderer,
         scene: THREE.Scene,
         camera: THREE.Camera,
@@ -40,16 +39,17 @@ export class GameRenderer {
     ) {
         let startTime: number | undefined;
         let lastTime: number | undefined;
-        let game = initialGame;
+        let game = this.game;
 
         function animate(currentTime: number) {
             if (startTime === undefined) startTime = currentTime;
-            const elapsed = lastTime ? (currentTime - lastTime) / 1000 : 0;
+            if (lastTime === undefined) lastTime = currentTime;
+            const timestamp = (currentTime - startTime) / 1000;
+            const elapsed = currentTime - lastTime;
             lastTime = currentTime;
 
             renderer.render(scene, camera);
 
-            const timestamp = (currentTime - startTime) / 1000;
             game = game.update(elapsed);
 
             const ballPos = game.ball.position;
