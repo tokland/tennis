@@ -29,6 +29,7 @@ export class GameRenderer {
         this.addLight();
         this.addCourt(this.game);
         const ball = this.addBall(this.game.ball);
+        const player = this.addPlayer();
 
         this.items = { ball: ball };
     }
@@ -58,17 +59,17 @@ export class GameRenderer {
     }
 
     addCamera() {
-        const camera = new THREE.PerspectiveCamera(80, 1, 0.1);
-        camera.position.set(0, 8, 5);
-        camera.lookAt(0, 0, 0);
+        const camera = new THREE.PerspectiveCamera(60, 1, 0.1);
+        camera.position.set(0, 10, 10);
+        camera.lookAt(0, 0, 1);
 
         return camera;
     }
 
     addCourt(game: Game) {
         const { scene } = this;
-        const courtWidth = 8.23;
-        const courtLength = 23.77;
+        const courtWidth = 10;
+        const courtLength = 10;
         const courtHeight = 0.1;
 
         const courtGeometry = new THREE.BoxGeometry(
@@ -125,6 +126,23 @@ export class GameRenderer {
         this.scene.add(ballMesh);
 
         return ballMesh;
+    }
+
+    addPlayer(): THREE.Mesh {
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const r = 0.5;
+        geometry.scale(r, r, r);
+
+        const material = new THREE.MeshBasicMaterial({
+            color: 0x0077ff,
+            wireframe: true,
+        });
+        const ellipsoid = new THREE.Mesh(geometry, material);
+        this.scene.add(ellipsoid);
+
+        ellipsoid.position.set(0, r, 5);
+
+        return ellipsoid;
     }
 
     addLight() {

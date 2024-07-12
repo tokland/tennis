@@ -220,7 +220,7 @@ export class Game {
                 court: {
                     length: 10,
                     width: 5,
-                    netHeight: 2,
+                    netHeight: 1.2,
                 },
             },
             {
