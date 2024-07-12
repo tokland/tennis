@@ -15,19 +15,11 @@ class Vector {
 type Position = Vector;
 
 class Kinematics {
-    constructor(
-        public position: Vector,
-        private speed: Vector,
-        private accel: Vector
-    ) {}
+    constructor(public position: Vector, private speed: Vector, private accel: Vector) {}
 
     update(tick: number): Kinematics {
         const newPosition = this.position.move(
-            new Vector(
-                this.speed.x * tick,
-                this.speed.y * tick,
-                this.speed.z * tick
-            )
+            new Vector(this.speed.x * tick, this.speed.y * tick, this.speed.z * tick)
         );
 
         const sx = this.speed.x + this.accel.x * tick;
@@ -98,18 +90,11 @@ type PlayerI = {
 };
 
 class Player {
-    constructor(
-        private props: PlayerI["props"],
-        private state: PlayerI["state"]
-    ) {}
+    constructor(private props: PlayerI["props"], private state: PlayerI["state"]) {}
 
     static create(props: PlayerI["props"]): Player {
         return new Player(props, {
-            kinematics: new Kinematics(
-                new Vector(0, 0, 0),
-                new Vector(0, 0, 0),
-                new Vector(0, 0, 0)
-            ),
+            kinematics: new Kinematics(new Vector(0, 0, 0), new Vector(0, 0, 0), new Vector(0, 0, 0)),
         });
     }
 
@@ -175,9 +160,7 @@ type MatchResultState = {
     currentSet: SetResult;
     currentGame: { a: Point; b: Point };
     currrentServe: 1 | 2;
-    currentPointState:
-        | { type: "serving"; player: "a" | "b" }
-        | { type: "playing" };
+    currentPointState: { type: "toServe"; player: "a" | "b" } | { type: "playing" };
 };
 
 class MatchResult {
@@ -189,8 +172,12 @@ class MatchResult {
             currentSet: { a: 0, b: 0 },
             currentGame: { a: 0, b: 0 },
             currrentServe: 1,
-            currentPointState: { type: "serving", player: "a" },
+            currentPointState: { type: "toServe", player: "a" },
         });
+    }
+
+    served(result: "fault" | "net" | "in"): MatchResult {
+        return this;
     }
 
     pointWonBy(player: "a" | "b"): MatchResult {
