@@ -15,19 +15,26 @@ class Vector {
 type Position = Vector;
 
 class Kinematics {
-    constructor(private position: Vector, private speed: Vector, private accel: Vector) {}
+    constructor(
+        public position: Vector,
+        private speed: Vector,
+        private accel: Vector
+    ) {}
 
     update(tick: number): Kinematics {
         const newPosition = this.position.move(
-            new Vector(this.speed.x * tick, this.speed.y * tick, this.speed.z * tick)
+            new Vector(
+                this.speed.x * tick,
+                this.speed.y * tick,
+                this.speed.z * tick
+            )
         );
 
-        const newSpeedX = this.speed.x + this.accel.x * tick;
-        const newSpeedY = this.speed.y + this.accel.y * tick;
-        const newSpeedZ = this.speed.z + this.accel.z * tick;
-        const newSpeedZ2 = newPosition.z <= 0 && newSpeedZ < 0 ? -(newSpeedZ * 0.9) : newSpeedZ;
-
-        const newSpeed = new Vector(newSpeedX, newSpeedY, newSpeedZ2);
+        const sx = this.speed.x + this.accel.x * tick;
+        const sy = this.speed.y + this.accel.y * tick;
+        const sz = this.speed.z + this.accel.z * tick;
+        const sz2 = newPosition.z <= 0 && sz < 0 ? -(sz * 0.9) : sz;
+        const newSpeed = new Vector(sx, sy, sz2);
 
         return new Kinematics(newPosition, newSpeed, this.accel);
     }
@@ -49,11 +56,19 @@ export class Ball {
     static create(props: BallProps): Ball {
         return new Ball(props, {
             kinematics: new Kinematics(
-                new Vector(0, 0, 1),
+                new Vector(0, -1, 4),
                 new Vector(0, 0, 0),
-                new Vector(0, 0, -gravityAccel)
+                new Vector(0, 0, gravityAccel)
             ),
         });
+    }
+
+    get position(): Vector {
+        return this.state.kinematics.position;
+    }
+
+    get radius(): number {
+        return this.props.radius;
     }
 
     private updateState(newPartialState: Partial<BallState>): Ball {
@@ -65,7 +80,9 @@ export class Ball {
     }
 
     update(tick: number): Ball {
-        return this.updateState({ kinematics: this.state.kinematics.update(tick) });
+        return this.updateState({
+            kinematics: this.state.kinematics.update(tick),
+        });
     }
 }
 
@@ -81,11 +98,18 @@ type PlayerI = {
 };
 
 class Player {
-    constructor(private props: PlayerI["props"], private state: PlayerI["state"]) {}
+    constructor(
+        private props: PlayerI["props"],
+        private state: PlayerI["state"]
+    ) {}
 
     static create(props: PlayerI["props"]): Player {
         return new Player(props, {
-            kinematics: new Kinematics(new Vector(0, 0, 0), new Vector(0, 0, 0), new Vector(0, 0, 0)),
+            kinematics: new Kinematics(
+                new Vector(0, 0, 0),
+                new Vector(0, 0, 0),
+                new Vector(0, 0, 0)
+            ),
         });
     }
 
@@ -130,11 +154,12 @@ type Court = {
     netHeight: number;
 };
 
-type GameProps = {};
+type GameProps = {
+    court: Court;
+};
 
 type GameState = {
     timestamp: number;
-    court: Court;
     ball: Ball;
     players: { a: Player; b: Player };
     matchState: MatchResult;
@@ -150,7 +175,9 @@ type MatchResultState = {
     currentSet: SetResult;
     currentGame: { a: Point; b: Point };
     currrentServe: 1 | 2;
-    currentPointState: { type: "serving"; player: "a" | "b" } | { type: "playing" };
+    currentPointState:
+        | { type: "serving"; player: "a" | "b" }
+        | { type: "playing" };
 };
 
 class MatchResult {
@@ -178,6 +205,10 @@ export class Game {
         return this.state.ball;
     }
 
+    get court(): Court {
+        return this.props.court;
+    }
+
     static create(): Game {
         const players = {
             a: Player.create({ name: "Player A" }),
@@ -185,15 +216,17 @@ export class Game {
         };
 
         return new Game(
-            {},
             {
-                timestamp: 0,
                 court: {
                     length: 10,
                     width: 5,
                     netHeight: 2,
                 },
-                ball: Ball.create({ radius: cm(5) }),
+            },
+            {
+                timestamp: 0,
+
+                ball: Ball.create({ radius: cm(10) }),
                 players: players,
                 matchState: MatchResult.initial(),
             }
