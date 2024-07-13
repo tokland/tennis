@@ -112,22 +112,24 @@ class Player {
 
 interface PlayerActor {}
 
+type PlayerAction = { type: "move"; to: Position; energy: number } | { type: "hit"; force: Vector };
+
 class AutoPlayerActor implements PlayerActor {
-    constructor(
-        private game: Game,
-        private player: Player,
-        private state: {
-            prevGame: Game;
-            status: { type: "waiting" } | { type: "moving"; to: Position };
+    constructor(private playerId: "a" | "b") {}
+
+    update(game: Game): PlayerAction[] {
+        switch (game.point.type) {
+            case "toServe":
+                const playerToServer = game.point.player;
+
+                if (playerToServer === this.playerId) {
+                    return [{ type: "hit", force: new Vector(1, 1, 1) }];
+                } else {
+                    return [];
+                }
+            case "playing":
+                return [];
         }
-    ) {}
-
-    update(): Player {
-        return this.player;
-    }
-
-    private goToBestPositionForHit(ball: Ball): Player {
-        return this.player;
     }
 }
 
@@ -147,7 +149,8 @@ type GameState = {
     timestamp: number;
     ball: Ball;
     players: { a: Player; b: Player };
-    matchState: MatchResult;
+    result: MatchResult;
+    point: { type: "toServe"; player: "a" | "b" } | { type: "playing" };
 };
 
 const cm = (x: number) => x / 100;
@@ -155,16 +158,15 @@ const cm = (x: number) => x / 100;
 type SetResult = { a: number; b: number };
 type Point = 0 | 15 | 30 | 40 | "advantage";
 
-type MatchResultState = {
+type MatchResult_ = {
     finishedSets: SetResult[];
     currentSet: SetResult;
     currentGame: { a: Point; b: Point };
     currrentServe: 1 | 2;
-    currentPointState: { type: "toServe"; player: "a" | "b" } | { type: "playing" };
 };
 
 class MatchResult {
-    constructor(private state: MatchResultState) {}
+    constructor(private state: MatchResult_) {}
 
     static initial(): MatchResult {
         return new MatchResult({
@@ -172,7 +174,6 @@ class MatchResult {
             currentSet: { a: 0, b: 0 },
             currentGame: { a: 0, b: 0 },
             currrentServe: 1,
-            currentPointState: { type: "toServe", player: "a" },
         });
     }
 
@@ -196,6 +197,10 @@ export class Game {
         return this.props.court;
     }
 
+    get point(): GameState["point"] {
+        return this.state.point;
+    }
+
     static create(): Game {
         const players = {
             a: Player.create({ name: "Player A" }),
@@ -214,7 +219,8 @@ export class Game {
                 timestamp: 0,
                 ball: Ball.create({ radius: cm(10) }),
                 players: players,
-                matchState: MatchResult.initial(),
+                point: { type: "toServe", player: "a" },
+                result: MatchResult.initial(),
             }
         );
     }
