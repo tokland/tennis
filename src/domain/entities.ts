@@ -110,7 +110,9 @@ class Player {
     }
 }
 
-interface PlayerActor {}
+interface PlayerActor {
+    update(game: Game): PlayerAction[];
+}
 
 type PlayerAction = { type: "move"; to: Position; energy: number } | { type: "hit"; force: Vector };
 
@@ -120,10 +122,10 @@ class AutoPlayerActor implements PlayerActor {
     update(game: Game): PlayerAction[] {
         switch (game.point.type) {
             case "toServe":
-                const playerToServer = game.point.player;
+                const playerIdToServe = game.point.playerId;
 
-                if (playerToServer === this.playerId) {
-                    return [{ type: "hit", force: new Vector(1, 1, 1) }];
+                if (playerIdToServe === this.playerId) {
+                    return [{ type: "hit", force: new Vector(0, 1, 1) }];
                 } else {
                     return [];
                 }
@@ -147,10 +149,10 @@ type GameProps = {
 
 type GameState = {
     timestamp: number;
+    result: MatchResult;
     ball: Ball;
     players: { a: Player; b: Player };
-    result: MatchResult;
-    point: { type: "toServe"; player: "a" | "b" } | { type: "playing" };
+    actors: { a: PlayerActor; b: PlayerActor };
 };
 
 const cm = (x: number) => x / 100;
@@ -163,10 +165,11 @@ type MatchResult_ = {
     currentSet: SetResult;
     currentGame: { a: Point; b: Point };
     currrentServe: 1 | 2;
+    point: { type: "toServe"; playerId: "a" | "b" } | { type: "playing" };
 };
 
 class MatchResult {
-    constructor(private state: MatchResult_) {}
+    constructor(public state: MatchResult_) {}
 
     static initial(): MatchResult {
         return new MatchResult({
@@ -174,6 +177,7 @@ class MatchResult {
             currentSet: { a: 0, b: 0 },
             currentGame: { a: 0, b: 0 },
             currrentServe: 1,
+            point: { type: "toServe", playerId: "a" },
         });
     }
 
@@ -197,14 +201,19 @@ export class Game {
         return this.props.court;
     }
 
-    get point(): GameState["point"] {
-        return this.state.point;
+    get point(): MatchResult_["point"] {
+        return this.state.result.state.point;
     }
 
     static create(): Game {
         const players = {
             a: Player.create({ name: "Player A" }),
             b: Player.create({ name: "Player B" }),
+        };
+
+        const playerActors = {
+            a: new AutoPlayerActor("a"),
+            b: new AutoPlayerActor("b"),
         };
 
         return new Game(
@@ -219,13 +228,16 @@ export class Game {
                 timestamp: 0,
                 ball: Ball.create({ radius: cm(10) }),
                 players: players,
-                point: { type: "toServe", player: "a" },
+                actors: playerActors,
                 result: MatchResult.initial(),
             }
         );
     }
 
     update(tick: number): Game {
+        const actions = this.state.actors.a.update(this);
+        console.log({ actions });
+
         return new Game(this.props, {
             ...this.state,
             timestamp: this.state.timestamp + tick,
